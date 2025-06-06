@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>租金比例試算</title>
+  <style>
+    body, html {
+      height: 100%;
+      margin: 0;
+      font-family: "微軟正黑體", sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f5f5f5;
+    }
+
+    #container {
+      background: white;
+      padding: 15px 55px;
+      border-radius: 8px;
+      box-shadow: 0 0 12px rgb(0 0 0 / 0.1);
+      max-width: 900px;
+      width: 100%;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .form-row {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      margin: 5px 0;
+      width: 350px;
+    }
+
+    label {
+      width: 120px;
+      font-weight: bold;
+      text-align: left;
+      margin-right: 15px;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    input {
+      width: 200px;
+      padding: 5px 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+
+    #buttonGroup {
+      margin: 10px 0 15px 0;
+      text-align: center;
+    }
+
+    button {
+      padding: 8px 20px;
+      margin: 0 10px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      background-color: #6C6C6C;
+      color: white;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      position: relative;
+      z-index: 1;
+    }
+
+    button:hover {
+      background-color: #005A9E;
+    }
+
+    #outputWrapper {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    textarea#calcResult,
+    textarea#emailBody {
+      width: 250px;
+      height: 250px;
+      font-family: "微軟正黑體", sans-serif;
+      font-size: 14px;
+      font-weight: bold;
+      white-space: pre-wrap;
+      resize: vertical;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    #htmlContent {
+      display: none;
+    }
+
+    #footerNote {
+      position: fixed;
+      bottom: 8px;
+      right: 10px;
+      font-size: 7px;
+      font-weight: bold;
+      color: #3C3C3C;
+      font-family: "微軟正黑體", sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+<div id="container">
+  <h2>租金比例試算</h2>
+
+  <form id="rentForm" onsubmit="event.preventDefault();">
+    <div class="form-row">
+      <label for="year">西元年：</label>
+      <input type="number" id="year" min="2018" max="2100" />
+    </div>
+
+    <div class="form-row">
+      <label for="month">月：</label>
+      <input type="number" id="month" min="1" max="12" />
+    </div>
+
+    <div class="form-row">
+      <label for="day">日：</label>
+      <input type="number" id="day" min="1" max="31" />
+    </div>
+
+    <div class="form-row">
+      <label for="rent">單台租金：</label>
+      <input type="number" id="rent" min="0" step="1" />
+    </div>
+
+    <div class="form-row">
+      <label for="units">台數：</label>
+      <input type="number" id="units" min="1" />
+    </div>
+  </form>
+
+  <div id="buttonGroup">
+    <button id="calcBtn" onclick="generateTemplate(); return false;">計算（補匯）➕</button>
+    <button id="rebateBtn" onclick="generateRebateTemplate(); return false;">計算（回扣）➖</button>
+    <button id="copyBtn" onclick="copyEmailOnly(); return false;">複製 📋</button>
+    <button onclick="clearAll(); return false;">清除 🧹</button>
+  </div>
+
+  <div id="outputWrapper">
+    <div>
+      <h3>📎 計算公式結果：</h3>
+      <textarea id="calcResult" readonly></textarea>
+    </div>
+    <div>
+      <h3>📝 信件內容產出：</h3>
+      <textarea id="emailBody" readonly></textarea>
+    </div>
+  </div>
+  <div id="htmlContent"></div>
+</div>
+<div id="footerNote">20250606 #SummerChung</div>
+
+<script>
+function isValidInputs() {
+  const year = document.getElementById('year').value;
+  const month = document.getElementById('month').value;
+  const day = document.getElementById('day').value;
+  const rent = document.getElementById('rent').value;
+  const units = document.getElementById('units').value;
+  return year && month && day && rent && units;
+}
+
+function isLeapYear(year) {
+  return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+}
+
+function getMonthDays(year, month) {
+  if ([1, 3, 5, 7, 8, 10, 12].includes(month)) return 31;
+  if ([4, 6, 9, 11].includes(month)) return 30;
+  return isLeapYear(year) ? 29 : 28;
+}
+
+function toROCDate(year, month, day) {
+  return `${year - 1911}/${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}`;
+}
+
+function generateEmailContent(rawText) {
+  const html = rawText
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\n/g, "<br>")
+    .replace(/ /g, "&nbsp;");
+  return `<span style="font-family: 微軟正黑體; font-size:11pt; font-weight:bold;">${html}</span>`;
+}
+
+function generateTemplate() {
+  if (!isValidInputs()) {
+    alert('請完整填寫所有欄位');
+    return;
+  }
+  const y = parseInt(document.getElementById('year').value);
+  const m = parseInt(document.getElementById('month').value);
+  const d = parseInt(document.getElementById('day').value);
+  const rent = parseInt(document.getElementById('rent').value);
+  const units = parseInt(document.getElementById('units').value);
+
+  const monthDays = getMonthDays(y, m);
+  const rentDays = monthDays - d + 1;
+  const totalRent = ((rent / monthDays) * rentDays * units).toFixed(0);
+
+  const formula = `$${rent} ÷ ${monthDays} × ${rentDays} × ${units} = $${totalRent}`;
+
+  const rawText =
+`Dear All：
+
+大樓名稱：
+地址：
+合約期間：
+掛機開播日期：${toROCDate(y, m, d)}
+單台租金：${rent}
+實際掛機台數：${units}
+備註：${formula}`;
+
+  document.getElementById('calcResult').value = formula;
+  document.getElementById('emailBody').value = rawText;
+
+  window._emailHtml = generateEmailContent(rawText);
+}
+
+function generateRebateTemplate() {
+  if (!isValidInputs()) {
+    alert('請完整填寫所有欄位');
+    return;
+  }
+  const y = parseInt(document.getElementById('year').value);
+  const m = parseInt(document.getElementById('month').value);
+  const d = parseInt(document.getElementById('day').value);
+  const rent = parseInt(document.getElementById('rent').value);
+  const units = parseInt(document.getElementById('units').value);
+
+  const rebateDays = d;
+  const monthDays = getMonthDays(y, m);
+  const totalRebate = ((rent / monthDays) * rebateDays * units).toFixed(0);
+
+  const formula = `$${rent} ÷ ${monthDays} × ${rebateDays} × ${units} = $${totalRebate}`;
+
+  const rawText =
+`Dear All：
+
+大樓名稱：
+地址：
+合約期間：
+拆機日期：${toROCDate(y, m, d)}
+單台租金：${rent}
+拆機台數：${units}
+備註：${formula}`;
+
+  document.getElementById('calcResult').value = `${formula}`;
+  document.getElementById('emailBody').value = rawText;
+
+  window._emailHtml = generateEmailContent(rawText);
+}
+
+function copyEmailOnly() {
+  if (!window._emailHtml) {
+    alert('請先點「計算」產生內容');
+    return;
+  }
+
+  const blobInput = new Blob([window._emailHtml], { type: 'text/html' });
+  const clipboardItemInput = new ClipboardItem({ 'text/html': blobInput });
+
+  navigator.clipboard.write([clipboardItemInput]).then(() => {
+    alert('已複製（含格式）到剪貼簿，可直接貼到 Outlook');
+  }, () => {
+    alert('複製失敗，請確認瀏覽器支援 clipboard API');
+  });
+}
+
+function clearAll() {
+  ['year', 'month', 'day', 'rent', 'units'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('calcResult').value = '';
+  document.getElementById('emailBody').value = '';
+  window._emailHtml = '';
+}
+</script>
+
+</body>
+</html>
