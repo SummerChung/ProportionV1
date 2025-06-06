@@ -299,33 +299,66 @@ function clearAll() {
 
 // ==== 磁鐵排斥效果，調整觸發範圍為150px，距離越近排斥越大 ====
 
-document.querySelectorAll('.magnetic').forEach(btn => {
-  btn.addEventListener('mousemove', e => {
-    if (!isValidInputs()) {
-      const rect = btn.getBoundingClientRect();
+document.addEventListener("mousemove", function(e) {
+  const calcBtn = document.getElementById("calcBtn");
+  const rebateBtn = document.getElementById("rebateBtn");
+  const copyBtn = document.getElementById("copyBtn");
+  const buttons = [calcBtn, rebateBtn, copyBtn];
+
+  if (!isValidInputs()) {
+    buttons.forEach(button => {
+      const rect = button.getBoundingClientRect();
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
-      const distX = e.clientX - centerX;
-      const distY = e.clientY - centerY;
-      const distance = Math.sqrt(distX * distX + distY * distY);
+      const dx = centerX - mouseX;
+      const dy = centerY - mouseY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
 
-      const triggerDistance = 330; // 觸發範圍，距離小於此值開始排斥
-      if (distance < triggerDistance) {
-        const strength = (triggerDistance - distance) / triggerDistance; // 0~1
-        const moveX = -distX * strength * 3.9;
-        const moveY = -distY * strength * 3.9;
-        btn.style.transform = `translate(${moveX}px, ${moveY}px)`;
+      const repelRadius = 140;
+      if (distance < repelRadius) {
+        const angle = Math.atan2(dy, dx);
+        const offsetX = Math.cos(angle) * (repelRadius - distance);
+        const offsetY = Math.sin(angle) * (repelRadius - distance);
+        button.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+        button.classList.add("magnetic");
       } else {
-        btn.style.transform = '';
+        button.style.transform = "translate(0, 0)";
+        button.classList.remove("magnetic");
       }
+    });
+  } else {
+    buttons.forEach(button => {
+      button.style.transform = "translate(0, 0)";
+      button.classList.remove("magnetic");
+
+// 監控欄位變動並開啟/關閉排斥效果
+const inputFields = ['year', 'month', 'day', 'rent', 'units'].map(id => document.getElementById(id));
+
+function updateRepelEffect() {
+  const hasEmpty = inputFields.some(input => !input.value.trim());
+
+  repelButtons.forEach(btn => {
+    if (hasEmpty) {
+      btn.classList.add('repel');
     } else {
-      btn.style.transform = '';
+      btn.classList.remove('repel');
+      btn.style.transform = 'translate(0, 0)';
     }
   });
+}
 
-  btn.addEventListener('mouseleave', () => {
-    btn.style.transform = '';
-  });
+// 綁定輸入事件
+inputFields.forEach(input => {
+  input.addEventListener('input', updateRepelEffect);
+});
+
+// 頁面初始時也檢查一次
+updateRepelEffect();
+
+    });
+  }
 });
 </script>
 
