@@ -175,7 +175,9 @@
   </div>
   <div id="htmlContent"></div>
 </div>
-<div id="footerNote">20250606 #SummerChung</div>
+<div id="footerNote">20250609 #SummerChung</div>
+
+<!-- 此處省略 <html> 開始到 </script> 前所有原始碼（你提供的HTML都保留不動） -->
 
 <script>
 function isValidInputs() {
@@ -297,13 +299,38 @@ function clearAll() {
   window._emailHtml = null;
 }
 
-// ==== 磁鐵排斥效果，調整觸發範圍為150px，距離越近排斥越大 ====
+// ========== 新增：即時檢查「月」與「日」輸入是否合法 ==========
+
+document.getElementById('month').addEventListener('input', function () {
+  const value = parseInt(this.value);
+  if (value < 1 || value > 12) {
+    alert('月份請輸入 1 到 12 之間的數字');
+    this.value = '';
+  }
+});
+
+document.getElementById('day').addEventListener('input', function () {
+  const year = parseInt(document.getElementById('year').value);
+  const month = parseInt(document.getElementById('month').value);
+  const day = parseInt(this.value);
+
+  if (!year || !month) return; // 尚未輸入足夠資料
+
+  const maxDay = getMonthDays(year, month);
+  if (day < 1 || day > maxDay) {
+    alert(`此月份最多只有 ${maxDay} 天`);
+    this.value = '';
+  }
+});
+
+// ========== 磁鐵排斥效果完整回復 ==========
 
 document.addEventListener("mousemove", function(e) {
-  const calcBtn = document.getElementById("calcBtn");
-  const rebateBtn = document.getElementById("rebateBtn");
-  const copyBtn = document.getElementById("copyBtn");
-  const buttons = [calcBtn, rebateBtn, copyBtn];
+  const buttons = [
+    document.getElementById("calcBtn"),
+    document.getElementById("rebateBtn"),
+    document.getElementById("copyBtn")
+  ];
 
   if (!isValidInputs()) {
     buttons.forEach(button => {
@@ -316,7 +343,7 @@ document.addEventListener("mousemove", function(e) {
       const dy = centerY - mouseY;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
-      const repelRadius = 140;
+      const repelRadius = 120;
       if (distance < repelRadius) {
         const angle = Math.atan2(dy, dx);
         const offsetX = Math.cos(angle) * (repelRadius - distance);
@@ -332,35 +359,8 @@ document.addEventListener("mousemove", function(e) {
     buttons.forEach(button => {
       button.style.transform = "translate(0, 0)";
       button.classList.remove("magnetic");
-
-// 監控欄位變動並開啟/關閉排斥效果
-const inputFields = ['year', 'month', 'day', 'rent', 'units'].map(id => document.getElementById(id));
-
-function updateRepelEffect() {
-  const hasEmpty = inputFields.some(input => !input.value.trim());
-
-  repelButtons.forEach(btn => {
-    if (hasEmpty) {
-      btn.classList.add('repel');
-    } else {
-      btn.classList.remove('repel');
-      btn.style.transform = 'translate(0, 0)';
-    }
-  });
-}
-
-// 綁定輸入事件
-inputFields.forEach(input => {
-  input.addEventListener('input', updateRepelEffect);
-});
-
-// 頁面初始時也檢查一次
-updateRepelEffect();
-
     });
   }
 });
 </script>
-
-</body>
 </html>
