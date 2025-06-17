@@ -135,16 +135,22 @@
     width: 100%;
   }
 
-  .form-row {
-    flex-direction: column;
-    align-items: flex-start;
-    width: 100%;
-  }
+.form-row {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center; /* ← 這句很重要，讓 label 和 input 垂直置中 */
+  margin: 5px 0;
+  width: 350px;
+}
 
-  label {
-    width: 100%;
-    margin-bottom: 5px;
-  }
+label {
+  width: 120px;
+  font-weight: bold;
+  text-align: left;
+  margin-right: 15px;
+  user-select: none;
+  white-space: nowrap;
+}
 
   input {
     width: 140px;
