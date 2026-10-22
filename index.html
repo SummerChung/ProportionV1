@@ -44,6 +44,7 @@
       position: relative;
       display: flex;
       flex-direction: column;
+      margin: auto;
     }
 
     h2 {
@@ -735,22 +736,27 @@ function syncTabHeights() {
     if (currentTab === 'single') {
       container.style.height = 'auto';
       singleSec.style.height = 'auto';
+      offsetSec.style.height = 'auto';
       const h = singleSec.offsetHeight;
       const ch = container.offsetHeight;
       if (h > 0 && ch > 0) {
         tab1MasterHeight = h;
         containerMasterHeight = ch;
-        container.style.height = containerMasterHeight + 'px';
-        offsetSec.style.height = tab1MasterHeight + 'px';
+        container.style.minHeight = containerMasterHeight + 'px';
+        offsetSec.style.minHeight = tab1MasterHeight + 'px';
       }
     } else if (containerMasterHeight > 0) {
-      container.style.height = containerMasterHeight + 'px';
-      offsetSec.style.height = tab1MasterHeight + 'px';
+      container.style.height = 'auto';
+      offsetSec.style.height = 'auto';
+      container.style.minHeight = containerMasterHeight + 'px';
+      offsetSec.style.minHeight = tab1MasterHeight + 'px';
     }
   } else {
     container.style.height = 'auto';
+    container.style.minHeight = 'auto';
     singleSec.style.height = 'auto';
     offsetSec.style.height = 'auto';
+    offsetSec.style.minHeight = 'auto';
   }
 }
 
